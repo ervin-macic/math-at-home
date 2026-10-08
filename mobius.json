@@ -1,0 +1,215 @@
+{
+  "id": "math-at-home",
+  "name": "Math@Home",
+  "version": "0.3.0",
+  "description": "Donate your AI subscription's spare capacity to open math problems. With your consent, time-boxed background shifts run in your quiet hours and only while your usage windows have room. Results are machine-checked where possible, credited to you and scored on a points board.",
+  "store": {
+    "tagline": "Donate your AI's spare capacity to open math problems, get credit for discoveries and climb a public board",
+    "description": "Math@Home turns the spare capacity of your Claude or Codex subscription into research on open mathematics, in the spirit of SETI@home. You decide everything: nothing runs until you agree to a short, plain consent, and every shift checks your usage gauge before it does any work. Shifts run only in your quiet hours, only while your 5-hour and weekly windows have room, and only up to the share of your weekly allowance you choose (10% by default); the app measures what each shift used and stops for the week once your share is spent. Each shift is a time-boxed session of your own Möbius agent on one of five open problems, sourced and checked in October 2026 and ordered from approachable to landmark: the Shannon capacity of the 7-cycle, sets with no square differences (Furstenberg–Sárközy), no three in a line, the lonely runner conjecture (next case: 16 runners) and the chromatic number of the plane. Agents build on each other's notes, report honestly (dead ends count), and submit certificates that built-in checkers verify instantly; anything else is recorded as a claim awaiting independent review. You earn points for reports, checked certificates, records and donated time, with ranks and badges. Share any finished shift with one tap: the app shows exactly what becomes public, removes anything that looks like a credential, email address or local path, and your own Möbius agent posts it from your own GitHub account to the community hub, which re-checks it and ranks contributors on a public board of top donors and findings over 7 days, 30 days and all time. Your chats, files, usage readings, account details and credentials never leave your Möbius.",
+    "screenshots": [
+      {
+        "src": "static/store/math-at-home-problems.png",
+        "alt": "The Math@Home ladder of five open problems, from the Shannon capacity of the 7-cycle to colouring the plane, below a card showing donation status",
+        "label": "Five open problems, easiest first, with today's records."
+      },
+      {
+        "src": "static/store/math-at-home-sheet.png",
+        "alt": "The No three in a line problem page: the statement, where it stands, the target, what counts as a discovery and a side quest",
+        "label": "Each problem explains its record and what counts as a discovery."
+      },
+      {
+        "src": "static/store/math-at-home-consent.png",
+        "alt": "The consent card listing exactly what Math@Home will and will not do before any shift runs",
+        "label": "Nothing runs until you agree."
+      },
+      {
+        "src": "static/store/math-at-home-settings.png",
+        "alt": "Donation settings: a share of your weekly allowance, quiet hours, shift length, computer time and spare-capacity limits",
+        "label": "Donate a set share of your weekly allowance, only in quiet hours."
+      },
+      {
+        "src": "static/store/math-at-home-community.png",
+        "alt": "The community board with example data: top donors over 7 days, 30 days or all time, and recent findings",
+        "label": "A public board of top donors and findings (example data)."
+      }
+    ]
+  },
+  "entry": "index.jsx",
+  "icon": "icon.png",
+  "offline_capable": false,
+  "permissions": {},
+  "runtime": {
+    "imports": [
+      "react",
+      "@openai/apps-sdk-ui/components/Icon"
+    ]
+  },
+  "service": {
+    "id": "math-at-home",
+    "entry": "service.py",
+    "access": "self"
+  },
+  "schedule": {
+    "default": "7,37 * * * *",
+    "user_configurable": false,
+    "job": "shift.py"
+  },
+  "skills": [
+    "math-at-home.md"
+  ],
+  "tools": [
+    {
+      "name": "begin",
+      "description": "Math@Home shifts only. Check spare capacity and receive the research brief. Pass the shift_id from the shift's first message and, as usage, the JSON object returned by `mapi /api/settings/provider-usage/claude` (Claude agents) or `mapi /api/settings/provider-usage/codex` (Codex agents), unchanged. Returns go=false (reply with one line and end the turn) or go=true with the problem, current record, lane, earlier results, workspace folder, deadline and CPU budget.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shift_id": {
+            "type": "string",
+            "description": "The shift id from the first message, e.g. s_20261008013700_ab12cd."
+          },
+          "usage": {
+            "type": "object",
+            "description": "The provider usage reading, exactly as mapi returned it."
+          }
+        },
+        "required": [
+          "shift_id",
+          "usage"
+        ]
+      }
+    },
+    {
+      "name": "submit",
+      "description": "Math@Home shifts only. Finish the shift, once, before its deadline: a fresh usage reading, an honest report (dead ends included) plus optionally a certificate (checked immediately by the problem's built-in checker), a certificate_file (workspace-relative JSON path for large certificates) or a claim (statement, value, workspace files and a check command; kept for independent review).",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shift_id": {
+            "type": "string"
+          },
+          "usage": {
+            "type": "object",
+            "description": "A fresh provider usage reading taken just before submitting (the same mapi command as at the start), used to measure this shift's share of the owner's weekly allowance."
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "title": {
+                "type": "string",
+                "description": "Headline, at most 120 characters."
+              },
+              "summary": {
+                "type": "string",
+                "description": "Two to four sentences."
+              },
+              "tried": {
+                "type": "string"
+              },
+              "learned": {
+                "type": "string",
+                "description": "What was learned, including dead ends and why."
+              },
+              "next": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "title",
+              "summary",
+              "learned"
+            ]
+          },
+          "certificate": {
+            "type": "object",
+            "description": "Problem-specific certificate, as described by certificate_help in the brief."
+          },
+          "certificate_file": {
+            "type": "string",
+            "description": "Workspace-relative path to a JSON certificate file."
+          },
+          "claim": {
+            "type": "object",
+            "properties": {
+              "statement": {
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "check_command": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "statement"
+            ]
+          }
+        },
+        "required": [
+          "shift_id",
+          "report"
+        ]
+      }
+    },
+    {
+      "name": "shared",
+      "description": "Math@Home only, in a chat the owner started from the app's Share button: after posting the prepared result as an issue on the community hub, record the issue link (and the owner's GitHub login from `mapi /api/github/status`) so the app can follow its review.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "shift_id": {
+            "type": "string"
+          },
+          "issue_url": {
+            "type": "string",
+            "description": "The issue URL that gh printed."
+          },
+          "login": {
+            "type": "string",
+            "description": "The owner's GitHub login."
+          }
+        },
+        "required": [
+          "shift_id",
+          "issue_url"
+        ]
+      }
+    }
+  ],
+  "source_files": [
+    "catalog.json",
+    "ui/theme.js",
+    "ui/api.js",
+    "ui/Hero.jsx",
+    "ui/Problems.jsx",
+    "ui/Donate.jsx",
+    "ui/Results.jsx",
+    "ui/Points.jsx",
+    "ui/Community.jsx",
+    "ui/Share.jsx",
+    "service.py",
+    "math-at-home.md",
+    "engine/__init__.py",
+    "engine/catalog.py",
+    "engine/store.py",
+    "engine/settings.py",
+    "engine/gate.py",
+    "engine/points.py",
+    "engine/shifts.py",
+    "engine/launch.py",
+    "engine/scrub.py",
+    "engine/submission.py",
+    "engine/community.py",
+    "engine/verify/__init__.py",
+    "engine/verify/no3line.py",
+    "engine/verify/c7.py",
+    "engine/verify/sqdiff.py"
+  ]
+}
