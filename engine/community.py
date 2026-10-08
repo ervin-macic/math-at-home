@@ -78,7 +78,8 @@ def _reconcile(conn: sqlite3.Connection, fresh: dict) -> None:
   recent = {item.get("shift_id"): item for item in fresh.get("recent_records") or [] if isinstance(item, dict)}
   pattern = _issue_url_pattern()
   rows = conn.execute(
-    "SELECT id FROM shifts WHERE share_status IN ('prepared', 'posted') OR (share_status = 'recorded' AND hub_verdict IS NULL)"
+    "SELECT id FROM shifts WHERE share_status IN ('prepared', 'posted') "
+    "OR (share_status = 'recorded' AND (hub_verdict IS NULL OR hub_lean IS NULL))"
   ).fetchall()
   for row in rows:
     item = recent.get(row["id"])
@@ -87,12 +88,22 @@ def _reconcile(conn: sqlite3.Connection, fresh: dict) -> None:
     url = item.get("issue_url") if isinstance(item.get("issue_url"), str) and pattern.match(item["issue_url"]) else None
     points = item.get("points") if isinstance(item.get("points"), int) else None
     conn.execute(
-      "UPDATE shifts SET share_status = 'recorded', hub_verdict = ?, hub_points = ?, share_url = COALESCE(?, share_url) WHERE id = ?",
-      (str(item.get("verdict") or "")[:40], points, url, row["id"]),
+      "UPDATE shifts SET share_status = 'recorded', hub_verdict = ?, hub_points = ?, share_url = COALESCE(?, share_url), "
+      "hub_lean = COALESCE(?, hub_lean) WHERE id = ?",
+      (str(item.get("verdict") or "")[:40], points, url, _lean_field(item.get("lean")), row["id"]),
     )
     login = item.get("login")
     if isinstance(login, str) and re.match(r"^[A-Za-z0-9-]{1,39}$", login) and not get_meta(conn, "github_login"):
       set_meta(conn, "github_login", login)
+
+
+def _lean_field(value) -> str | None:
+  """The board's Lean result for one record, reduced to known values."""
+  if not isinstance(value, dict) or value.get("status") not in ("verified", "failed"):
+    return None
+  method = value.get("method") if value.get("method") in ("kernel", "native") else None
+  toolchain = value.get("toolchain") if isinstance(value.get("toolchain"), str) else ""
+  return json.dumps({"status": value["status"], "method": method, "toolchain": toolchain[:60]})
 
 
 def _load_json(path: Path):

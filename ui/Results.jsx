@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { CloseBold, Flask, Globe, History, Moon, Sparkles, Terminal } from '@openai/apps-sdk-ui/components/Icon'
-import { SHIFT_STATUS, VERDICT, fmtMinutes, fmtTokens, fmtWhen, toneClass } from './api.js'
+import { SHIFT_STATUS, VERDICT, fmtMinutes, fmtTokens, fmtWhen, shortValue, toneClass } from './api.js'
 
 function StatusPill({ status }) {
   const info = SHIFT_STATUS[status] || { label: status, tone: '' }
@@ -9,7 +9,12 @@ function StatusPill({ status }) {
 
 function VerdictPill({ verdict, value }) {
   const info = VERDICT[verdict] || { label: verdict, tone: '' }
-  return <span className={toneClass(info.tone)}>{info.label}{value && verdict !== 'logged' ? ` · ${value}` : ''}</span>
+  const shown = value && verdict !== 'logged' ? shortValue(value) : ''
+  return (
+    <span className={toneClass(info.tone)} title={value && verdict !== 'logged' ? String(value) : undefined}>
+      {info.label}{shown ? ` · ${shown}` : ''}
+    </span>
+  )
 }
 
 export function ResultsPanel({ state, preview, onOpenShift, onGoDonate }) {
@@ -39,6 +44,7 @@ export function ResultsPanel({ state, preview, onOpenShift, onGoDonate }) {
   }
   return (
     <div className="mh-stack">
+      <HowVerified />
       {state.shifts.map((shift) => {
         const items = byShift[shift.id] || []
         const report = items.find((item) => item.kind === 'report')
@@ -58,6 +64,7 @@ export function ResultsPanel({ state, preview, onOpenShift, onGoDonate }) {
               <span className="mh-chips">
                 <StatusPill status={shift.status} />
                 {shift.share_status === 'recorded' && <span className="mh-pill is-accent">On the board</span>}
+                {shift.hub_lean?.status === 'verified' && <span className="mh-pill is-good" title="Proved in Lean 4 on the community board">Lean ✓</span>}
                 {(shift.share_status === 'posted' || shift.share_status === 'prepared') && <span className="mh-pill">Sharing</span>}
                 {items.filter((i) => i.kind !== 'report').map((i) => <VerdictPill key={i.id} verdict={i.verdict} value={i.value || i.claimed_value} />)}
                 {items.reduce((sum, i) => sum + (i.points || 0), 0) > 0 && (
@@ -87,6 +94,40 @@ function Transcript({ chatId }) {
   }, [chatId])
   if (error) return <p className="mh-hint">{error}</p>
   return <div ref={mountRef} className="mh-transcript" />
+}
+
+const STEP_MARK = { passed: '✓', failed: '✗', pending: '…', not_run: '–', 'n/a': '–' }
+
+function Verification({ v }) {
+  return (
+    <div className="mh-verify">
+      <div className="mh-verify-head">{v.headline}</div>
+      <ul className="mh-verify-steps">
+        {v.steps.map((step) => (
+          <li key={step.name} className={`is-${step.status.replace('/', '')}`}>
+            <span className="mh-verify-mark" aria-hidden="true">{STEP_MARK[step.status] || '–'}</span>
+            <span><b>{step.name}.</b> {step.text}</span>
+          </li>
+        ))}
+      </ul>
+      {v.statement && <p className="mh-hint">What is checked: {v.statement}. {v.consequence}</p>}
+    </div>
+  )
+}
+
+export function HowVerified() {
+  return (
+    <details className="mh-card mh-how">
+      <summary>How results are verified</summary>
+      <ul className="mh-list">
+        <li><span><b>Certificates</b> (a grid configuration, a set of words, a residue set) are checked instantly by the built-in checker with exact arithmetic, here and again on the community board.</span></li>
+        <li><span><b>Lean 4.</b> When you share a certificate, the board restates it as a Lean theorem and proves it: "kernel" means Lean's kernel computed the proof; a "compiled check" also trusts Lean's compiler. Lean checks the certificate's defining property; a bound that rests on a classical theorem is cited, not formalized. This Möbius does not run Lean itself.</span></li>
+        <li><span><b>Claims</b> (proof sketches, experiments) are not machine-verified. They stay "awaiting review" until someone independently confirms them, and only then earn record points.</span></li>
+        <li><span><b>Reports</b> record what was tried, dead ends included, and make no mathematical claim.</span></li>
+        <li><span><b>Credit</b> goes to the person whose AI agent found the result: your credit name and GitHub account, with a timestamp and fingerprint.</span></li>
+      </ul>
+    </details>
+  )
 }
 
 function ShareBlock({ shift, hasReport, onShare }) {
@@ -150,7 +191,8 @@ export function ShiftSheet({ shift, contributions, loadDetail, onSettle, onShare
             <div key={item.id} className="mh-block">
               <h4>{item.kind === 'claim' ? 'Claim' : 'Certificate'}</h4>
               <div className="mh-chips" style={{ marginTop: 0 }}><VerdictPill verdict={item.verdict} value={item.value || item.claimed_value} />{item.points ? <span className="mh-pill is-accent">+{item.points} pts</span> : null}</div>
-              <p className="mh-hint" style={{ marginTop: 6 }}>{item.verdict_detail}</p>
+              {item.kind === 'claim' && item.claimed_value && <p className="mh-claimed"><b>Claimed:</b> {item.claimed_value}</p>}
+              {d?.verification ? <Verification v={d.verification} /> : <p className="mh-hint" style={{ marginTop: 6 }}>{item.verdict_detail}</p>}
               {item.fingerprint && <p className="mh-hint" style={{ marginTop: 4, wordBreak: 'break-all' }}>Fingerprint (SHA-256): {item.fingerprint}</p>}
               {d?.preview && <pre className="mh-pre" style={{ marginTop: 8 }}>{d.preview.text}{d.preview.truncated ? '\n…' : ''}</pre>}
               {item.kind === 'claim' && item.verdict === 'pending_review' && (

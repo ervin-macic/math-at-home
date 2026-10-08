@@ -84,6 +84,11 @@ Always submit your best certificate, even when it falls short of the record:
 it proves progress and earns points. Never present an unchecked result as a
 record. If the checker rejects a certificate, say so in the report.
 
+How results are verified, so your report describes them accurately: the
+built-in checker verifies certificates immediately; when the owner shares
+one, the community board also proves it in Lean 4. Claims are not
+machine-verified: they stay "awaiting review" until someone confirms them.
+
 ## 5. End the turn
 
 Reply with two lines for the owner: what you did and what the checker said.

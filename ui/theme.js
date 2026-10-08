@@ -134,6 +134,7 @@ html, body { margin: 0; padding: 0; height: 100%; background: var(--bg, #0d0d0d)
 .mh-chev { color: var(--mh-muted); opacity: .7; margin-top: 12px; }
 .mh-pill {
   display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+  max-width: 100%; min-width: 0; overflow: hidden; text-overflow: ellipsis;
   font-size: 11.5px; font-weight: 660; line-height: 1.4; color: var(--mh-muted);
   background: var(--mh-surface-2); border: 1px solid var(--mh-border);
 }
@@ -217,6 +218,21 @@ html, body { margin: 0; padding: 0; height: 100%; background: var(--bg, #0d0d0d)
 .mh-shift-sub { margin-top: 2px; font-size: 12px; color: var(--mh-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mh-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
 .mh-stack { display: flex; flex-direction: column; gap: 8px; }
+
+/* Verification */
+.mh-verify { margin-top: 8px; padding: 11px 12px; border-radius: 12px; background: var(--mh-surface-2); border: 1px solid var(--mh-border); }
+.mh-verify-head { font-size: 13.5px; font-weight: 720; margin-bottom: 6px; }
+.mh-verify-steps { margin: 0 0 6px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.mh-verify-steps li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; font-size: 13px; line-height: 1.45; color: var(--mh-muted); overflow-wrap: anywhere; }
+.mh-verify-steps b { color: var(--mh-text); font-weight: 680; }
+.mh-verify-mark { font-weight: 800; text-align: center; }
+.mh-verify-steps li.is-passed .mh-verify-mark { color: var(--mh-good); }
+.mh-verify-steps li.is-failed .mh-verify-mark { color: var(--mh-bad); }
+.mh-verify-steps li.is-pending .mh-verify-mark { color: var(--mh-accent); }
+.mh-claimed { margin: 8px 0 0; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.mh-how summary { cursor: pointer; font-weight: 720; font-size: 14.5px; min-height: 28px; }
+.mh-how summary:focus-visible { outline: 2px solid var(--mh-accent); outline-offset: 2px; }
+.mh-how .mh-list li { font-size: 13.5px; }
 
 /* Points */
 .mh-score { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }

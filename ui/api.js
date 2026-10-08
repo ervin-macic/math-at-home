@@ -89,3 +89,11 @@ export function toneClass(tone) {
 export function signal(name, payload) {
   try { window.mobius?.signal?.(name, payload) } catch { /* analytics never breaks the app */ }
 }
+
+// Long claimed values (whole sentences) must never stretch a badge; the full
+// text lives in the result's detail view and the badge's tooltip.
+export function shortValue(value, limit = 24) {
+  if (value === null || value === undefined) return ''
+  const text = String(value).replace(/\s+/g, ' ').trim()
+  return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text
+}

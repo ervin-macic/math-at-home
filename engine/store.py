@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS shifts (
   share_url TEXT,
   shared_at TEXT,
   hub_verdict TEXT,
-  hub_points INTEGER
+  hub_points INTEGER,
+  hub_lean TEXT
 );
 CREATE INDEX IF NOT EXISTS shifts_created ON shifts(created_at);
 CREATE TABLE IF NOT EXISTS contributions (
@@ -96,7 +97,7 @@ ADDED_COLUMNS = {
   "shifts": {
     "cycle": "TEXT", "weekly_before": "REAL", "weekly_after": "REAL", "charged": "REAL",
     "share_status": "TEXT", "share_sha256": "TEXT", "share_url": "TEXT", "shared_at": "TEXT",
-    "hub_verdict": "TEXT", "hub_points": "INTEGER",
+    "hub_verdict": "TEXT", "hub_points": "INTEGER", "hub_lean": "TEXT",
   },
 }
 
@@ -166,6 +167,11 @@ def row_dict(row: sqlite3.Row | None) -> dict | None:
   if row is None:
     return None
   item = dict(row)
+  if isinstance(item.get("hub_lean"), str):
+    try:
+      item["hub_lean"] = json.loads(item["hub_lean"])
+    except ValueError:
+      item["hub_lean"] = None
   for key in ("capacity_json", "tokens_json"):
     if key in item:
       raw = item.pop(key)

@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from engine import catalog, gate, iso, parse_iso, points, store, utcnow  # noqa: E402
-from engine import community, launch  # noqa: E402
+from engine import community, launch, verification  # noqa: E402
 from engine import settings as settings_mod  # noqa: E402
 from engine import shifts as shifts_mod  # noqa: E402
 
@@ -196,6 +196,13 @@ def contribution(conn, contribution_id: str | None) -> dict:
   item["preview"] = preview
   shift = shifts_mod.get(conn, row["shift_id"]) if row["shift_id"] else None
   item["chat_id"] = (shift or {}).get("chat_id")
+  certificate = None
+  if row["kind"] == "certificate" and row["result_dir"]:
+    try:
+      certificate = json.loads((Path(row["result_dir"]) / "certificate.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+      certificate = None
+  item["verification"] = verification.describe(dict(row), shift, catalog.problem(row["problem_id"]) or {}, certificate)
   return item
 
 

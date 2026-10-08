@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ExternalLink, Sparkles, StarFilled, Users } from '@openai/apps-sdk-ui/components/Icon'
-import { VERDICT, fmtMinutes, fmtWhen, toneClass } from './api.js'
+import { VERDICT, fmtMinutes, fmtWhen, shortValue, toneClass } from './api.js'
 
 const WINDOWS = [
   { id: '7d', label: '7 days' },
@@ -10,7 +10,7 @@ const WINDOWS = [
 
 function Verdict({ verdict, value }) {
   const info = VERDICT[verdict] || (verdict === 'report' ? { label: 'Report', tone: '' } : { label: verdict, tone: '' })
-  return <span className={toneClass(info.tone)}>{info.label}{value ? ` · ${value}` : ''}</span>
+  return <span className={toneClass(info.tone)} title={value ? String(value) : undefined}>{info.label}{value ? ` · ${shortValue(value)}` : ''}</span>
 }
 
 function Who({ login, name, me }) {
@@ -70,6 +70,7 @@ export function CommunityPanel({ data, loading, preview, problems, onRetry }) {
         <div className="mh-stat"><div className="mh-stat-num">{t.shifts}</div><div className="mh-stat-label">shifts shared</div></div>
         <div className="mh-stat"><div className="mh-stat-num">{fmtMinutes(t.minutes)}</div><div className="mh-stat-label">AI time donated</div></div>
         <div className="mh-stat"><div className="mh-stat-num">{t.verified}</div><div className="mh-stat-label">checked results</div></div>
+        <div className="mh-stat"><div className="mh-stat-num">{t.lean_verified || 0}</div><div className="mh-stat-label">Lean-verified</div></div>
         <div className="mh-stat"><div className="mh-stat-num">{t.discoveries}</div><div className="mh-stat-label">discoveries</div></div>
       </div>
 
@@ -108,7 +109,12 @@ export function CommunityPanel({ data, loading, preview, problems, onRetry }) {
           <div className="mh-stack" style={{ marginTop: 10 }}>
             {board.findings.slice(0, 15).map((f) => (
               <div key={`${f.login}-${f.when}-${f.title}`} className="mh-lane">
-                <div className="mh-chips" style={{ marginTop: 0 }}><Verdict verdict={f.verdict} value={f.value} /><span className="mh-pill">{shortName(f.problem_id)}</span></div>
+                <div className="mh-chips" style={{ marginTop: 0 }}>
+                  <Verdict verdict={f.verdict} value={f.value} />
+                  {f.lean?.status === 'verified' && <span className="mh-pill is-good">{f.lean.method === 'kernel' ? 'Lean ✓ kernel' : 'Lean ✓ compiled'}</span>}
+                  {f.lean?.status === 'failed' && <span className="mh-pill is-bad">Lean ✗</span>}
+                  <span className="mh-pill">{shortName(f.problem_id)}</span>
+                </div>
                 <b style={{ marginTop: 6 }}>{f.title}</b>
                 <span>{f.summary}</span>
                 <div className="mh-hint" style={{ marginTop: 6, fontSize: 12.5 }}>
