@@ -10,6 +10,12 @@ problem, paid for by the owner's spare subscription capacity, which they
 explicitly agreed to donate. Treat that capacity as a gift: check it before
 you work, use it well, stop on time, and report honestly.
 
+**Scope.** A shift chat exists only for its one shift. If your turn is paused,
+interrupted or resumed, continue the shift (call `math_at_home_begin` if you
+have not) or end it. Never pick up other work you notice in notes, memory,
+recent chats or Goals, never ask the owner questions or for approvals (put
+anything for them in the report), and never take public actions.
+
 ## 1. Check spare capacity first (always)
 
 Before any other work:

@@ -28,6 +28,7 @@ ACTIVE = ("starting", "running")
 COUNTED_TODAY = ("starting", "running", "done", "abandoned")
 ESTIMATE_DEFAULT = 2.0  # weekly-gauge points a full shift is assumed to use before any is measured
 ESTIMATE_FLOOR = 0.5
+MISFIRE_POINTS_PER_TOKEN = 2.0 / 1_000_000  # before any shift is measured: 2 gauge points per million tokens
 START_GRACE = timedelta(minutes=25)
 ENDED_GRACE = timedelta(minutes=3)
 LATE_GRACE = timedelta(minutes=30)
@@ -133,6 +134,10 @@ def plan(conn: sqlite3.Connection, *, now: datetime, trigger: str, problem_id: s
 def start_message(shift: dict, problem: dict, lane: dict) -> str:
   return (
     f"Math@Home shift {shift['id']}: {problem['title']}, lane \"{lane['title']}\".\n\n"
+    "This chat exists only to run this one shift. If your turn is paused, interrupted or resumed, "
+    "continue this shift or end it. Never pick up other work you see in notes, memory, recent chats "
+    "or Goals; never ask the owner questions or for approvals (put anything for them in your report); "
+    "and never take public actions such as creating repositories, publishing, pushing or opening issues.\n\n"
     "You are running a donated research shift on the owner's spare AI capacity. "
     "Read the `math-at-home` skill (/data/shared/skills/math-at-home.md) and follow it. In short:\n"
     "1. Check spare capacity first: run `mapi /api/settings/provider-usage/claude` if you are Claude, "
@@ -592,4 +597,52 @@ def reconcile(conn: sqlite3.Connection, chats: list[dict] | None, now: datetime)
       totals = ((chat or {}).get("usage") or {}).get("totals") if chat else None
       if isinstance(totals, dict):
         conn.execute("UPDATE shifts SET tokens_json = ? WHERE id = ?", (json.dumps(totals), shift_id))
+    _charge_misfires(conn, by_id, now)
   return {"settled": settled}
+
+
+def _points_per_token(conn: sqlite3.Connection, provider: str) -> float:
+  """Weekly-gauge points per token, from the last measured shifts."""
+  rows = conn.execute(
+    "SELECT charged, tokens_json FROM shifts WHERE provider = ? AND weekly_after IS NOT NULL "
+    "AND charged IS NOT NULL AND tokens_json IS NOT NULL ORDER BY ended_at DESC LIMIT 5",
+    (provider,),
+  ).fetchall()
+  charged, tokens = 0.0, 0
+  for row in rows:
+    try:
+      total = int((json.loads(row["tokens_json"]) or {}).get("total_tokens") or 0)
+    except (TypeError, ValueError):
+      total = 0
+    if total > 0:
+      charged += float(row["charged"])
+      tokens += total
+  return charged / tokens if tokens else MISFIRE_POINTS_PER_TOKEN
+
+
+def _charge_misfires(conn: sqlite3.Connection, by_id: dict, now: datetime) -> None:
+  """Charge shifts that ran but never checked in to this week's share.
+
+  Such a chat still spent the owner's capacity, so its tokens are converted to
+  weekly-gauge points at the measured rate and counted in the current cycle.
+  """
+  rows = conn.execute(
+    "SELECT * FROM shifts WHERE status = 'failed' AND begun_at IS NULL AND charged IS NULL AND chat_id IS NOT NULL"
+  ).fetchall()
+  for row in rows:
+    shift = row_dict(row)
+    chat = by_id.get(shift["chat_id"])
+    if chat is None or chat.get("running"):
+      continue
+    tokens = int(((chat.get("usage") or {}).get("totals") or {}).get("total_tokens") or 0)
+    provider = shift.get("provider") or chat.get("provider") or "claude"
+    latest = conn.execute(
+      "SELECT cycle FROM shifts WHERE provider = ? AND cycle IS NOT NULL ORDER BY created_at DESC LIMIT 1",
+      (provider,),
+    ).fetchone()
+    cycle = latest["cycle"] if latest and (parse_iso(latest["cycle"]) or now) > now else None
+    charged = round(tokens * _points_per_token(conn, provider), 2) if tokens > 0 else 0.0
+    conn.execute(
+      "UPDATE shifts SET provider = COALESCE(provider, ?), cycle = COALESCE(cycle, ?), charged = ? WHERE id = ?",
+      (provider, cycle, charged, shift["id"]),
+    )

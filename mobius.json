@@ -1,7 +1,7 @@
 {
   "id": "math-at-home",
   "name": "Math@Home",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Donate your AI subscription's spare capacity to open math problems. With your consent, time-boxed background shifts run in your quiet hours and only while your usage windows have room. Results are machine-checked where possible, credited to you and scored on a points board.",
   "store": {
     "tagline": "Donate your AI's spare capacity to open math problems, get credit for discoveries and climb a public board",
