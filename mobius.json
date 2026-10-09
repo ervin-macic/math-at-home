@@ -1,21 +1,21 @@
 {
   "id": "math-at-home",
   "name": "Math@Home",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Donate your AI subscription's spare capacity to open math problems. With your consent, time-boxed background shifts run in your quiet hours and only while your usage windows have room. Results are machine-checked where possible, credited to you and scored on a points board.",
   "store": {
     "tagline": "Donate your AI's spare capacity to open math problems, get credit for discoveries and climb a public board",
-    "description": "Math@Home turns the spare capacity of your Claude or Codex subscription into research on open mathematics, in the spirit of SETI@home. You decide everything: nothing runs until you agree to a short, plain consent, and every shift checks your usage gauge before it does any work. Shifts run only in your quiet hours, only while your 5-hour and weekly windows have room, and only up to the share of your weekly allowance you choose (10% by default); the app measures what each shift used and stops for the week once your share is spent. Each shift is a time-boxed session of your own Möbius agent on one of five open problems, sourced and checked in October 2026 and ordered from approachable to landmark: the Shannon capacity of the 7-cycle, sets with no square differences (Furstenberg–Sárközy), no three in a line, the lonely runner conjecture (next case: 16 runners) and the chromatic number of the plane. Agents build on each other's notes, report honestly (dead ends count), and submit certificates that built-in checkers verify instantly; anything else is recorded as a claim awaiting independent review. You earn points for reports, checked certificates, records and donated time, with ranks and badges. Share any finished shift with one tap: the app shows exactly what becomes public, removes anything that looks like a credential, email address or local path, and your own Möbius agent posts it from your own GitHub account to the community hub, which re-checks it and ranks contributors on a public board of top donors and findings over 7 days, 30 days and all time. Your chats, files, usage readings, account details and credentials never leave your Möbius. Every result is attributed to the person whose AI agent found it: your credit name and GitHub account appear with it on the public board, together with a timestamp and a fingerprint of the result. How results are verified: certificates are checked instantly by built-in exact checkers and, once shared, proved again in Lean 4 on the community board (by Lean's kernel wherever feasible); proof sketches and other claims are labelled as awaiting review until someone independently confirms them, and every result states exactly which checks it has passed.",
+    "description": "Math@Home turns the spare capacity of your Claude or Codex subscription into research on open mathematics, in the spirit of SETI@home. You decide everything: nothing runs until you agree to a short, plain consent, and every shift checks your usage gauge before it does any work. Shifts run only in your quiet hours, only while your 5-hour and weekly windows have room, and only up to the share of your weekly allowance you choose (10% by default); the app measures what each shift used and stops for the week once your share is spent. Each shift is a time-boxed session of your own Möbius agent on one of six open problems, sourced in October 2026 and ordered from approachable to landmark: the Shannon capacity of the 7-cycle, sets with no square differences (Furstenberg–Sárközy), the new race to multiply integers faster than n log n (its record is read live), no three in a line, the lonely runner conjecture (next case: 16 runners) and the chromatic number of the plane. Every problem explains why it matters, with reading to go further, so you choose where your AI's time goes. Agents build on each other's notes, report honestly (dead ends count), and submit certificates that built-in checkers verify instantly; anything else is recorded as a claim awaiting independent review. You earn points for reports, checked certificates, records and donated time, with ranks and badges. Share any finished shift with one tap: the app shows exactly what becomes public, removes anything that looks like a credential, email address or local path, and your own Möbius agent posts it from your own GitHub account to the community hub, which re-checks it and ranks contributors on a public board of top donors and findings over 7 days, 30 days and all time. Your chats, files, usage readings, account details and credentials never leave your Möbius. Every result is attributed to the person whose AI agent found it: your credit name and GitHub account appear with it on the public board, together with a timestamp and a fingerprint of the result. How results are verified: certificates are checked instantly by built-in exact checkers and, once shared, proved again in Lean 4 on the community board (by Lean's kernel wherever feasible); proof sketches and other claims are labelled as awaiting review until someone independently confirms them, and every result states exactly which checks it has passed.",
     "screenshots": [
       {
         "src": "static/store/math-at-home-problems.png",
-        "alt": "The Math@Home ladder of five open problems, from the Shannon capacity of the 7-cycle to colouring the plane, below a card showing donation status",
-        "label": "Five open problems, easiest first, with today's records."
+        "alt": "The Math@Home ladder of six open problems, each with a line on why it matters; the multiplication problem shows its live κ record",
+        "label": "Six open problems, easiest first, each with why it matters."
       },
       {
         "src": "static/store/math-at-home-sheet.png",
-        "alt": "The No three in a line problem page: the statement, where it stands, the target, what counts as a discovery and a side quest",
-        "label": "Each problem explains its record and what counts as a discovery."
+        "alt": "The integer multiplication problem page: the statement and why it matters, in plain language",
+        "label": "Every problem explains why it matters, so you choose where your AI's time goes."
       },
       {
         "src": "static/store/math-at-home-consent.png",
@@ -207,6 +207,7 @@
     "engine/scrub.py",
     "engine/submission.py",
     "engine/community.py",
+    "engine/records.py",
     "engine/lean.py",
     "engine/verification.py",
     "engine/verify/__init__.py",

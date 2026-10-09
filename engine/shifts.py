@@ -19,7 +19,7 @@ import secrets
 import shutil
 import sqlite3
 
-from engine import catalog, gate, iso, parse_iso, points
+from engine import catalog, gate, iso, parse_iso, points, records, utcnow
 from engine import settings as settings_mod
 from engine import verify
 from engine.store import get_meta, log_event, row_dict, set_meta, write
@@ -329,6 +329,20 @@ def _brief(conn, storage, shift, problem, lane, settings) -> dict:
     f"Your donation share for this shift ends when the weekly usage gauge reaches {stop_at}%. "
     "Re-run the usage check about every 10 minutes; once it is at or above that, stop and submit.",
   ] if stop_at is not None else []
+  # A record that moves faster than app releases is read live (one request, no
+  # API look-ups, so the tool call stays quick); the agent re-checks it too.
+  record = records.current(conn, problem, utcnow(), details=False)
+  live = record.get("live")
+  config = problem.get("live_record") or {}
+  live_source = (
+    f"https://raw.githubusercontent.com/{config['repo']}/{config.get('branch', 'main')}/{config['path']}"
+    if config.get("repo") and config.get("path") else None
+  )
+  live_rules = [
+    "This problem's record changes often. "
+    + (f"The record above was read live at {live['fetched_at']}" if live else "The record above may be out of date")
+    + f"; re-check {live_source} before you claim to beat it.",
+  ] if live_source else []
   return {
     "go": True,
     "shift_id": shift["id"],
@@ -344,11 +358,14 @@ def _brief(conn, storage, shift, problem, lane, settings) -> dict:
     "workspace": str(folder),
     "notes_file": str(folder / "NOTES.md"),
     "problem": {
-      key: problem[key]
-      for key in (
-        "id", "title", "area", "statement", "known", "record", "target", "discovery",
-        "side_quest", "certificate_help", "credit", "recent", "sources",
-      )
+      **{
+        key: problem[key]
+        for key in (
+          "id", "title", "area", "statement", "known", "target", "discovery",
+          "side_quest", "certificate_help", "credit", "recent", "sources",
+        )
+      },
+      "record": record,
     },
     "automatic_checker": verify.supports(problem),
     "lane": lane,
@@ -361,6 +378,7 @@ def _brief(conn, storage, shift, problem, lane, settings) -> dict:
       "Do not post, publish, email, open issues or pull requests, create accounts or spend money.",
       "Install Python packages only into a virtual environment inside the workspace.",
       *share_rules,
+      *live_rules,
     ],
     "finish": (
       "Update NOTES.md, run the usage check once more, then call math_at_home_submit with shift_id, "

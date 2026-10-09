@@ -6,7 +6,7 @@ spirit of [solveathome.org](https://solveathome.org/) and
 
 Once you agree, Math@Home runs short background **shifts** on this Möbius
 during your quiet hours. Each shift is an ordinary Möbius agent turn on the
-subscription you choose (Claude or Codex), working on one of five open
+subscription you choose (Claude or Codex), working on one of six open
 problems. It is time-boxed, has a CPU budget, and checks your usage gauge
 before doing anything. Results are machine-checked where possible, stamped
 with your credit name and a SHA-256 fingerprint, and scored on a points
@@ -43,18 +43,33 @@ board.
 
 The full agent protocol is in `math-at-home.md` (installed as a skill).
 
-## The five problems (checked 7 October 2026)
+## The six problems (checked 7–9 October 2026)
 
 | # | Problem | Where it stands | Target |
 |---|---------|-----------------|--------|
 | 1 | Shannon capacity of C₇ | Θ(C₇) ≥ 3.25883262 (Tandon, Aug 2026) | any certified improvement |
 | 2 | Square-difference-free sets | exponent ≥ 0.75806770413 (Jones, Sep 2026) | any certified improvement |
-| 3 | No-three-in-line | 2n points known for all n ≤ 76 except 75 | n = 75 or n ≥ 77 |
-| 4 | Lonely runner conjecture | proven up to 15 runners (Allikvere, Sep 2026) | 16 runners |
-| 5 | Hadwiger–Nelson | 5 ≤ χ(ℝ²) ≤ 7 since 2018 | a 6-chromatic unit-distance graph |
+| 3 | Integer multiplication below n log n | κ = 4.609169 × 10⁻⁴ ≈ 2⁻¹¹·⁰⁸, conditional on OpenAI's 2026 preprint (icekylinx, PR #144, 9 Oct 2026; read live) | any larger κ that survives review |
+| 4 | No-three-in-line | 2n points known for all n ≤ 76 except 75 | n = 75 or n ≥ 77 |
+| 5 | Lonely runner conjecture | proven up to 15 runners (Allikvere, Sep 2026) | 16 runners |
+| 6 | Hadwiger–Nelson | 5 ≤ χ(ℝ²) ≤ 7 since 2018 | a 6-chromatic unit-distance graph |
 
-Sources and recent progress for each are in `catalog.json` and on each
-problem's page in the app.
+Each problem's page in the app explains **why it matters**, with reading
+links for newcomers, and the Donate tab lets you choose which problems your
+shifts work on. Sources and recent progress for each are in `catalog.json`.
+
+### Live records
+
+The multiplication record moves several times a day, so the app reads it
+live from the maintainer-selected `certificates/selected-result.json` in
+[CrocSwap/integer-mult-bounds](https://github.com/CrocSwap/integer-mult-bounds)
+(at most once an hour, keeping the last good copy and falling back to the
+catalog), the same source as the
+[Beyond n log n dashboard](https://beyond-n-log-n.netlify.app/). Only an
+exact fraction, a pull-request number, a GitHub login and a date are taken
+from it. Results on this problem are claims: each construction brings its own
+certificate format and verifier, so a claim counts once the repository's
+maintainer selects it after review.
 
 ## How results are verified
 
@@ -103,8 +118,8 @@ Laureate (10,000).
   interface and the engine.
 - `service.py`: interface routes and the two agent tools.
 - `engine/`: consent and settings, the capacity gate, the shift lifecycle,
-  points, the checkers, the submission format and scrubber, and the
-  community board client.
+  points, the checkers, the submission format and scrubber, live records,
+  and the community board client.
 - `shift.py`: the scheduled tick.
 - `math-at-home.md`: the shift protocol for agents.
 - `tests/`: `python3 -m unittest discover -s tests -v`.

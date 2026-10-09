@@ -37,7 +37,7 @@ export function PointsPanel({ state, preview, rules, problems }) {
             { id: 'ten-shifts', name: 'Ten shifts', hint: 'Complete ten shifts.' },
             { id: 'checked', name: 'Checked certificate', hint: 'Submit a certificate that passes a checker.' },
             { id: 'record', name: 'Record breaker', hint: 'Beat a record.' },
-            { id: 'all-five', name: 'All five problems', hint: 'Work a shift on every problem.' },
+            { id: 'every-problem', name: 'Every problem', hint: 'Work a shift on every problem.' },
           ]).map((badge) => (
             <div key={badge.id} className={`mh-badge${badge.earned ? ' is-earned' : ''}`} title={badge.hint}>
               {badge.earned ? <StarFilled width={18} height={18} aria-hidden="true" /> : <Star width={18} height={18} aria-hidden="true" />}

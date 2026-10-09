@@ -193,6 +193,21 @@ html, body { margin: 0; padding: 0; height: 100%; background: var(--bg, #0d0d0d)
 .mh-btn:active { transform: scale(.97); }
 .mh-btn:focus-visible { outline: 2px solid var(--mh-accent); outline-offset: 2px; }
 .mh-btn:disabled { opacity: .5; cursor: default; transform: none; }
+.mh-btn.is-chosen { color: var(--mh-good); border-color: color-mix(in srgb, var(--mh-good) 40%, var(--mh-border)); background: color-mix(in srgb, var(--mh-good) 10%, var(--mh-surface)); }
+.mh-problem-why { display: block; margin: -4px 0 10px; font-size: 13px; line-height: 1.45; color: var(--mh-muted); }
+.mh-problem-why b { color: color-mix(in srgb, var(--mh-text) 80%, var(--mh-muted)); font-weight: 650; }
+.mh-why p + p { margin-top: 10px; }
+.mh-live-note { margin-top: 6px; }
+.mh-live-note a { color: var(--mh-accent); }
+.mh-choices { gap: 0; margin: 6px 0 8px; }
+.mh-choice { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; padding: 9px 0; border-top: 1px solid var(--mh-border); }
+.mh-choice:first-child { border-top: 0; }
+.mh-choice .mh-check { flex: 1; min-width: 0; min-height: 0; align-items: flex-start; }
+.mh-choice .mh-check input { flex: none; margin-top: 2px; }
+.mh-choice-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.mh-choice-title { font-weight: 650; }
+.mh-choice-why { font-size: 12.5px; line-height: 1.45; color: var(--mh-muted); }
+.mh-choice-more { flex: none; min-height: 32px; padding: 4px 10px; font-size: 12.5px; white-space: nowrap; }
 .mh-btn-primary { background: var(--mh-accent); border-color: var(--mh-accent); color: var(--mh-accent-fg); }
 .mh-btn-primary:hover:not(:disabled) { filter: brightness(1.06); }
 .mh-btn-ghost { background: transparent; border-color: transparent; color: var(--mh-accent); }

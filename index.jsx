@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Atom, InfoCircle, Warning } from '@openai/apps-sdk-ui/components/Icon'
 import CATALOG from './catalog.json'
 import { CSS } from './ui/theme.js'
-import { createApi, isPreview, signal } from './ui/api.js'
+import { createApi, isChosen, isPreview, signal, toggleChoice } from './ui/api.js'
 import { Hero } from './ui/Hero.jsx'
 import { ProblemList, ProblemSheet } from './ui/Problems.jsx'
 import { DonatePanel } from './ui/Donate.jsx'
@@ -19,6 +19,9 @@ const TABS = [
   { id: 'community', label: 'Community' },
 ]
 const PROBLEMS = [...CATALOG.problems].sort((a, b) => a.rank - b.rank)
+const PROBLEM_IDS = PROBLEMS.map((p) => p.id)
+const COUNT_WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve']
+const COUNT = COUNT_WORDS[PROBLEMS.length] || String(PROBLEMS.length)
 
 export default function App({ appId, token }) {
   const preview = isPreview(appId)
@@ -34,6 +37,7 @@ export default function App({ appId, token }) {
   const [shareShift, setShareShift] = useState(null)
   const [community, setCommunity] = useState(null)
   const [communityLoading, setCommunityLoading] = useState(false)
+  const [liveRecords, setLiveRecords] = useState({})
   const readySent = useRef(false)
 
   const refresh = useCallback(async () => {
@@ -102,6 +106,30 @@ export default function App({ appId, token }) {
 
   const loadDetail = useCallback((id) => api.call(`contribution?id=${encodeURIComponent(id)}`), [api])
 
+  // Records that move faster than app releases (the multiplication κ race) are
+  // read live by the service; the catalog's record stays as the fallback.
+  useEffect(() => {
+    if (!api) return undefined
+    let cancelled = false
+    const load = async () => {
+      try {
+        const result = await api.call('records')
+        if (!cancelled && result?.records) setLiveRecords(result.records)
+      } catch (e) {
+        signal('error', { message: e.message, source: 'records' })
+      }
+    }
+    load()
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === 'visible') load()
+    }, 15 * 60 * 1000)
+    return () => { cancelled = true; window.clearInterval(timer) }
+  }, [api])
+  const problems = useMemo(
+    () => PROBLEMS.map((p) => (liveRecords[p.id] ? { ...p, record: liveRecords[p.id] } : p)),
+    [liveRecords],
+  )
+
   const loadCommunity = useCallback(async () => {
     if (!api) return
     setCommunityLoading(true)
@@ -153,14 +181,23 @@ export default function App({ appId, token }) {
   const consented = Boolean(state?.consent?.current)
   const active = state?.active
   const subtitle = preview
-    ? 'Preview · five open problems'
+    ? `Preview · ${COUNT.toLowerCase()} open problems`
     : !state ? 'Loading…'
       : active ? `Working on ${active.problem_short}`
         : state.settings.enabled && consented ? `Donating · ${state.totals.points.toLocaleString()} points`
           : consented ? 'Paused' : 'Not donating yet'
   const shift = openShift && state ? state.shifts.find((s) => s.id === openShift) : null
   const shiftItems = shift ? state.contributions.filter((c) => c.shift_id === shift.id) : []
-  const problem = openProblem ? PROBLEMS.find((p) => p.id === openProblem) : null
+  const problem = openProblem ? problems.find((p) => p.id === openProblem) : null
+  const chosen = consented && state?.settings ? state.settings.problems : null
+  const choice = problem && chosen ? {
+    included: isChosen(chosen, problem.id),
+    canRemove: toggleChoice(chosen, PROBLEM_IDS, problem.id) !== null,
+    onToggle: () => {
+      const next = toggleChoice(chosen, PROBLEM_IDS, problem.id)
+      if (next) act('settings', { problems: next }, isChosen(chosen, problem.id) ? 'Left out of your donations.' : 'Added to your donations.')
+    },
+  } : null
 
   return (
     <div className="mh-root">
@@ -202,11 +239,11 @@ export default function App({ appId, token }) {
             <>
               <Hero preview={preview} state={state} busy={busy} onSetup={() => setTab('donate')} onRunNow={() => runNow()} />
               <div className="mh-section-head">
-                <h2 className="mh-section-title">Five open problems, easiest first</h2>
-                <span className="mh-section-note">Checked {CATALOG.as_of}</span>
+                <h2 className="mh-section-title">{COUNT} open problems, easiest first</h2>
+                <span className="mh-section-note">Checked {CATALOG.as_of}{problems.some((p) => p.record.live) ? ' · live records hourly' : ''}</span>
               </div>
               {loading && !state ? <div className="mh-skeleton" /> : (
-                <ProblemList problems={PROBLEMS} tiers={CATALOG.tiers} stats={state?.problems} onOpen={setOpenProblem} />
+                <ProblemList problems={problems} tiers={CATALOG.tiers} stats={state?.problems} chosen={chosen} onOpen={setOpenProblem} />
               )}
               <div className="mh-banner">
                 <InfoCircle width={17} height={17} aria-hidden="true" />
@@ -219,21 +256,22 @@ export default function App({ appId, token }) {
               state={state}
               preview={preview}
               busy={busy}
-              problems={{ list: PROBLEMS, consentTerms: CATALOG.consent }}
+              problems={{ list: problems, consentTerms: CATALOG.consent }}
               onAgree={(body) => act('consent', body, 'Thank you. Donation is on.')}
               onSave={(patch) => act('settings', patch, 'Saved.')}
               onWithdraw={() => act('consent/withdraw', {}, 'Consent withdrawn. Nothing more will run.')}
               onRunNow={() => runNow()}
+              onOpenProblem={setOpenProblem}
             />
           )}
           {tab === 'results' && (
             <ResultsPanel state={state} preview={preview} onOpenShift={setOpenShift} onGoDonate={() => setTab('donate')} />
           )}
           {tab === 'points' && (
-            <PointsPanel state={state} preview={preview} rules={CATALOG.points} problems={PROBLEMS} />
+            <PointsPanel state={state} preview={preview} rules={CATALOG.points} problems={problems} />
           )}
           {tab === 'community' && (
-            <CommunityPanel data={community} loading={communityLoading} preview={preview} problems={PROBLEMS} onRetry={loadCommunity} />
+            <CommunityPanel data={community} loading={communityLoading} preview={preview} problems={problems} onRetry={loadCommunity} />
           )}
         </div>
       </main>
@@ -244,6 +282,7 @@ export default function App({ appId, token }) {
           stats={state?.problems}
           canRun={!preview && consented && !active}
           busy={busy}
+          choice={choice}
           onRun={runNow}
           onClose={() => setOpenProblem(null)}
         />

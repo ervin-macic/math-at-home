@@ -97,3 +97,21 @@ export function shortValue(value, limit = 24) {
   const text = String(value).replace(/\s+/g, ' ').trim()
   return text.length > limit ? `${text.slice(0, limit - 1).trimEnd()}…` : text
 }
+
+// Settings keep [] for "every problem". These helpers are shared by the
+// donation picker and the problem page, so both toggle the same way and a
+// toggle never empties the list (which would silently mean "every problem").
+export function isChosen(chosen, id) {
+  return !chosen?.length || chosen.includes(id)
+}
+
+export function toggleChoice(chosen, allIds, id) {
+  const selected = chosen?.length ? chosen : allIds
+  const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]
+  if (!next.length) return null
+  return next.length === allIds.length ? [] : allIds.filter((x) => next.includes(x))
+}
+
+export function recordWho(record) {
+  return [record?.holder, record?.date].filter(Boolean).join(', ')
+}

@@ -95,7 +95,7 @@ def summary(conn: sqlite3.Connection) -> dict:
     {"id": "record", "name": "Record breaker",
      "earned": any(verdicts.get(v) for v in ("side_record", "record", "confirmed")),
      "hint": "Beat a record."},
-    {"id": "all-five", "name": "All five problems", "earned": touched == len(by_problem),
+    {"id": "every-problem", "name": "Every problem", "earned": touched == len(by_problem),
      "hint": "Work a shift on every problem."},
   ]
   return {

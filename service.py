@@ -25,7 +25,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from engine import catalog, gate, iso, parse_iso, points, store, utcnow  # noqa: E402
-from engine import community, launch, verification  # noqa: E402
+from engine import community, launch, records, verification  # noqa: E402
 from engine import settings as settings_mod  # noqa: E402
 from engine import shifts as shifts_mod  # noqa: E402
 
@@ -276,6 +276,9 @@ def ui_request(req: dict, conn) -> dict:
       raise Problem(404, "Unknown problem.")
     result = launch.start(conn, token, now=utcnow(), trigger="manual", problem_id=problem_id)
     return {"result": result, "state": state(conn)}
+  if path == "records" and method == "GET":
+    # Records that move faster than app releases, read live (cached for an hour).
+    return {"records": records.all_live(conn, catalog.problems(), utcnow())}
   if path == "community" and method == "GET":
     view = community.board(conn, utcnow())
     counts = {

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CheckCircleFilled, InfoCircle, Play, ShieldCheck } from '@openai/apps-sdk-ui/components/Icon'
-import { fmtWhen } from './api.js'
+import { fmtWhen, isChosen, toggleChoice } from './api.js'
 
 const SHARES = [5, 10, 15, 20, 25, 33, 50, 100]
 const MINUTES = [15, 20, 30, 45, 60, 90, 120]
@@ -120,7 +120,7 @@ function CapacityNote({ capacity }) {
   )
 }
 
-export function DonatePanel({ state, problems, preview, busy, onAgree, onSave, onWithdraw, onRunNow }) {
+export function DonatePanel({ state, problems, preview, busy, onAgree, onSave, onWithdraw, onRunNow, onOpenProblem }) {
   const settings = state?.settings
   const consented = state?.consent?.current
   const [draft, setDraft] = useState(settings || null)
@@ -138,11 +138,9 @@ export function DonatePanel({ state, problems, preview, busy, onAgree, onSave, o
   }
   const set = (key) => (value) => setDraft((current) => ({ ...current, [key]: value }))
   const allIds = problems.list.map((p) => p.id)
-  const selected = draft.problems.length ? draft.problems : allIds
   const toggleProblem = (id) => {
-    const next = selected.includes(id) ? selected.filter((x) => x !== id) : [...selected, id]
-    if (!next.length) return
-    set('problems')(next.length === allIds.length ? [] : allIds.filter((x) => next.includes(x)))
+    const next = toggleChoice(draft.problems, allIds, id)
+    if (next) set('problems')(next)
   }
   const zone = deviceZone()
   return (
@@ -254,12 +252,23 @@ export function DonatePanel({ state, problems, preview, busy, onAgree, onSave, o
         </div>
         <div className="mh-field" style={{ marginTop: 14 }}>
           <span className="mh-label">Problems</span>
-          <div className="mh-checks">
+          <span className="mh-hint">Choose where your AI's time goes. Each problem says why it matters; open one to read more.</span>
+          <div className="mh-checks mh-choices">
             {problems.list.map((p) => (
-              <label key={p.id} className="mh-check">
-                <input type="checkbox" checked={selected.includes(p.id)} onChange={() => toggleProblem(p.id)} />
-                <span>#{p.rank} {p.title}</span>
-              </label>
+              <div key={p.id} className="mh-choice">
+                <label className="mh-check">
+                  <input type="checkbox" checked={isChosen(draft.problems, p.id)} onChange={() => toggleProblem(p.id)} />
+                  <span className="mh-choice-text">
+                    <span className="mh-choice-title">#{p.rank} {p.title}</span>
+                    {p.significance?.summary && <span className="mh-choice-why">{p.significance.summary}</span>}
+                  </span>
+                </label>
+                {onOpenProblem && (
+                  <button type="button" className="mh-btn mh-btn-ghost mh-choice-more" onClick={() => onOpenProblem(p.id)}>
+                    Why it matters
+                  </button>
+                )}
+              </div>
             ))}
           </div>
           <span className="mh-hint">Shifts rotate through the ticked problems, least-recently worked first.</span>

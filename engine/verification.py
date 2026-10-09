@@ -29,6 +29,14 @@ def _hub_lean(shift: dict | None) -> dict | None:
   return value if isinstance(value, dict) else None
 
 
+def _review_rule(problem: dict) -> str:
+  """What a pending claim waits for: the problem's own review rule when it has one."""
+  verifier = problem.get("verifier") or {}
+  if verifier.get("kind") == "review" and verifier.get("note"):
+    return f"Waiting for review. {verifier['note']}"
+  return "Waiting for someone to replay the computation or check the argument."
+
+
 def describe(contribution: dict, shift: dict | None, problem: dict, certificate: dict | None) -> dict:
   kind, verdict = contribution["kind"], contribution["verdict"]
   if kind == "report":
@@ -52,7 +60,7 @@ def describe(contribution: dict, shift: dict | None, problem: dict, certificate:
          "text": "Not formalized. A claim counts only after an independent replay or review confirms it."},
         {"name": "Independent review", "status": review,
          "text": "Confirmed." if review == "passed" else "Refuted." if review == "failed"
-         else "Waiting for someone to replay the computation or check the argument."},
+         else _review_rule(problem)},
       ],
     }
   checker = CHECKER_STATUS.get(verdict, "not_run")

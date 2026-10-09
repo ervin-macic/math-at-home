@@ -50,6 +50,12 @@ JSON object as `usage`. The tool applies the owner's limits.
 - Web reading is fine for checking the literature and records. Never post,
   publish, email, open issues or pull requests, create accounts or pay for
   anything.
+- Some records move faster than app releases; the brief's rules then name
+  the live source. Re-check it before you claim to beat it.
+- When a lane works in an upstream repository, clone it shallowly into the
+  workspace (`git clone --depth 1`) and keep the workspace small. Reading and
+  running its checks is fine; never push, comment, or open issues or pull
+  requests there. The owner decides whether to submit anything upstream.
 - Run `date -u` now and then. Start wrapping up at least 5 minutes before the
   deadline.
 - If the brief has a `share` with `stop_at_weekly_percent`, the owner capped
